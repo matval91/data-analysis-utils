@@ -88,3 +88,83 @@ def total_violin_plot(df: pd.DataFrame)->None:
 
   fig.tight_layout()
   plt.show()
+
+
+def plot_count(df: pd.core.frame.DataFrame, col: str, title_name: str='Train') -> None:
+    """
+    Plot of the labels with a pie chart and a bar chart showing how many samples are in each label
+
+    Args:
+      df         (obj): pd.dataframe containing the total data    
+      col        (str): column with the name of the target
+      title_name (str): name of the plot
+    Returns:
+    """
+    # Set background color
+    plt.rcParams['figure.facecolor'] = '#FFFAF0'
+    
+    f, ax = plt.subplots(1, 2, figsize=(12, 6))
+    plt.subplots_adjust(wspace=0.2)
+
+    s1 = df[col].value_counts()
+    N = len(s1)
+
+    outer_sizes = s1
+    inner_sizes = s1/N
+
+    outer_colors = ['#9E3F00', '#eb5e00', '#ff781f']
+    inner_colors = ['#ff6905', '#ff8838', '#ffa66b']
+
+    ax[0].pie(
+        outer_sizes,colors=outer_colors, 
+        labels=s1.index.tolist(), 
+        startangle=90, frame=True, radius=1.3, 
+        explode=([0.05]*(N-1) + [.3]),
+        wedgeprops={'linewidth' : 1, 'edgecolor' : 'white'}, 
+        textprops={'fontsize': 12, 'weight': 'bold'}
+    )
+
+    textprops = {
+        'size': 13, 
+        'weight': 'bold', 
+        'color': 'white'
+    }
+
+    ax[0].pie(
+        inner_sizes, colors=inner_colors,
+        radius=1, startangle=90,
+        autopct='%1.f%%', explode=([.1]*(N-1) + [.3]),
+        pctdistance=0.8, textprops=textprops
+    )
+
+    center_circle = plt.Circle((0,0), .68, color='black', fc='white', linewidth=0)
+    ax[0].add_artist(center_circle)
+
+    x = s1
+    y = s1.index.tolist()
+    sns.barplot(
+        x=x, y=y, ax=ax[1],
+        palette='YlOrBr_r', orient='horizontal'
+    )
+
+    ax[1].spines['top'].set_visible(False)
+    ax[1].spines['right'].set_visible(False)
+    ax[1].tick_params(
+        axis='x',         
+        which='both',      
+        bottom=False,      
+        labelbottom=False
+    )
+
+    for i, v in enumerate(s1):
+        ax[1].text(v, i+0.1, str(v), color='black', fontweight='bold', fontsize=12)
+
+    plt.setp(ax[1].get_yticklabels(), fontweight="bold")
+    plt.setp(ax[1].get_xticklabels(), fontweight="bold")
+    ax[1].set_xlabel(col, fontweight="bold", color='black')
+    ax[1].set_ylabel('count', fontweight="bold", color='black')
+
+    f.suptitle(f'{title_name}', fontsize=18, fontweight='bold')
+    plt.tight_layout()
+    plt.show()
+
