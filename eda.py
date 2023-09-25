@@ -6,6 +6,8 @@ import seaborn as sns
 import missingno as msno
 import matplotlib.pyplot as plt
 
+cmap='YlOrBr_r'
+
 def summary(input_data: pd.DataFrame, print: bool =True)->pd.DataFrame:
   """ 
   Prints a summary of some EDA values for each row
@@ -18,7 +20,7 @@ def summary(input_data: pd.DataFrame, print: bool =True)->pd.DataFrame:
   """
   sum = pd.DataFrame(input_data.dtypes, columns=['dtypes'])
   sum['missing#'] = input_data.isna().sum()
-  sum['missing%'] = (input_data.isna().sum())/len(df)
+  sum['missing%'] = (input_data.isna().sum())/len(input_data)
   sum['uniques'] = input_data.nunique().values
   sum['count'] = input_data.count().values
   #sum['skew'] = input_data.skew().values
@@ -27,6 +29,37 @@ def summary(input_data: pd.DataFrame, print: bool =True)->pd.DataFrame:
     print(sum)
   return sum
 
+
+def categorize_variables(df: pd.core.frame.DataFrame)-> list,list,pd.core.frame.DataFrame:
+  """
+  """
+  num_var         = df.select_dtypes(include=['int', 'float']).columns.tolist()
+  categorical_var = df.select_dtypes(exclude=['int', 'float']).columns.tolist()
+  df_encoded = _encode_variables(df, categorical_var)
+  return num_var, categorical_var, df_encoded
+
+def _encode_variables(df: pd.core.frame.DataFrame, categorical_vars: list)->pd.core.frame.DataFrame:
+  """
+  Hidden function to encode the variables
+
+  Args:
+    df                (obj): pd.dataframe containing the total data    
+    categorical_vars  (str): list of categorical variables
+  Returns:  
+    df_encoded (obj): pd.dataframe with the encoded variables only
+  """
+  from sklearn.preprocessing import LabelEncoder
+
+  # Create a copy of the dataframe
+  df_encoded = df.copy()
+
+  # Label encode categorical columns
+  label_encoders = {}
+  for column in categorical_vars:
+      le = LabelEncoder()
+      df_encoded[column] = le.fit_transform(df[column])
+      label_encoders[column] = le
+  return df_encoded
 
 def plot_pair(df: pd.DataFrame,num_var:list,target:list,
   plotname: str='Scatter Matrix with Target')->None:
@@ -83,6 +116,52 @@ def total_violin_plot(df: pd.DataFrame)->None:
     sns.violinplot(x='outcome', y=col, data=df, ax=axs[i])
     axs[i].set_title(f'{col.title()} Distribution by Target (df)', fontsize=14)
     axs[i].set_xlabel('outcome', fontsize=12)
+    axs[i].set_ylabel(col.title(), fontsize=12)
+    sns.despine()
+
+  fig.tight_layout()
+  plt.show()
+
+def numerical_histogram_plot(df: pd.DataFrame, hue:str, num_var: str)->None:
+  """ 
+  Makes a histogram plot of every variable divided by label 
+
+  Args:
+    df  (obj) : pd.dataframe containing the total data
+    hue (str) : string with the name of the label to use to hue the data    
+    num_var (str): list of strings for numerical values only
+  Returns:
+  """
+  n_rows = len(num_var)
+  fig, axs = plt.subplots(n_rows, 1, figsize=(12, 4 * n_rows))
+  sns.set_palette("Set2")
+  for i, col in enumerate(num_var):
+    sns.histplot(x=col, data=df, hue=hue, ax=axs[i])
+    axs[i].set_title(f'{col.title()} Distribution by Target (df)', fontsize=14)
+    axs[i].set_xlabel(hue, fontsize=12)
+    axs[i].set_ylabel(col.title(), fontsize=12)
+    sns.despine()
+
+  fig.tight_layout()
+  plt.show()
+
+def categorical_box_plot(df: pd.DataFrame, hue:str, categorical_var: str)->None:
+  """ 
+  Makes a histogram plot of every variable divided by label 
+
+  Args:
+    df  (obj) : pd.dataframe containing the total data
+    hue (str) : string with the name of the label to use to hue the data    
+    categorical_var (str): list of strings for numerical values only
+  Returns:
+  """
+  n_rows = len(num_var)
+  fig, axs = plt.subplots(n_rows, 1, figsize=(12, 4 * n_rows))
+  sns.set_palette("Set2")
+  for i, col in enumerate(categorical_var):
+    sns.countplot(x=col, data=df, hue=hue, ax=axs[i])
+    axs[i].set_title(f'{col.title()} Distribution by Target (df)', fontsize=14)
+    axs[i].set_xlabel(hue, fontsize=12)
     axs[i].set_ylabel(col.title(), fontsize=12)
     sns.despine()
 
@@ -168,3 +247,67 @@ def plot_count(df: pd.core.frame.DataFrame, col: str, title_name: str='Train') -
     plt.tight_layout()
     plt.show()
 
+
+def correlation_matrix_heatmap(df: pd.core.frame.DataFrame)->None:
+  """
+  Plot of the correlation matrix
+
+  Args:
+    df         (obj): pd.dataframe containing the total data    
+  Returns:
+  """
+  num_var, categorical_var, df_encoded = categorize_variables(df)
+  correlation_matrix_numerical(df, num_var)
+  correlation_matrix_categorical(df_encoded)
+
+def correlation_matrix_numerical(df: pd.core.frame.DataFrame, num_var: str, title_name: str='Correlation Matrix Numerical') -> None:
+  """
+  Plot of the correlation matrix for numerical variables
+
+  Args:
+    df         (obj): pd.dataframe containing the total data    
+    num_var    (str): list of numerical variables in the dataset
+    title_name (str): name of the plot
+  Returns:
+  """
+  corr_matrix = df[num_var].corr()
+  mask = np.triu(np.ones_like(corr_matrix, dtype=bool))
+
+  plt.figure(figsize=(15, 12))
+  sns.heatmap(corr_matrix, mask=mask, annot=True, cmap=cmap, fmt='.2f', linewidths=1, square=True, annot_kws={"size": 9} )
+  plt.title('Correlation Matrix', fontsize=15)
+  plt.show()
+
+def correlation_matrix_categorical(df_encoded: pd.core.frame.DataFrame, title_name: str='Correlation Matrix categorical') -> None:
+  """
+  Plot of the correlation matrix for categorical variables
+
+  Args:
+    df_encoded (obj): pd.dataframe containing the encoded data    
+    title_name (str): name of the plot
+  Returns:
+  """
+  excluded_columns = ['']
+  columns_without_excluded = [col for col in df_encoded.columns if col not in excluded_columns]
+  corr = df_encoded[columns_without_excluded].corr()
+  
+  fig, axes = plt.subplots(figsize=(14, 10))
+  mask = np.zeros_like(corr)
+  mask[np.triu_indices_from(mask)] = True
+  sns.heatmap(corr, mask=mask, linewidths=.5, cmap=cmap, annot=True, annot_kws={"size": 6})
+  plt.title(title_name)
+  plt.show()
+
+
+def rescale_dataset(df: pd.core.frame.DataFrame) -> pd.core.frame.DataFrame:
+  """
+  Rescale the input dataframe with the minmax method
+
+  Args:
+    df  (obj): pd.dataframe containing the total data
+  Returns:
+    df_resc  (obj): pd.dataframe containing the rescaled data
+  """
+  from mlxtend.preprocessing import minmax_scaling
+  df_scaled = minmax_scaling(df, columns=df.columns.values)
+  return df_scaled
