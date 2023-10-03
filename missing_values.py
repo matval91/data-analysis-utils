@@ -1,4 +1,4 @@
-# Functions to do handle missing values on a dataset
+# Functions to handle missing values on a dataset
 #
 # M. Vallar - 09/2023
 import pandas as pd

@@ -136,7 +136,7 @@ def numerical_histogram_plot(df: pd.DataFrame, hue:str, num_var: str)->None:
   fig, axs = plt.subplots(n_rows, 1, figsize=(12, 4 * n_rows))
   sns.set_palette("Set2")
   for i, col in enumerate(num_var):
-    sns.histplot(x=col, data=df, hue=hue, ax=axs[i])
+    sns.histplot(y=col, data=df, hue=hue, ax=axs[i], multiple='dodge')
     axs[i].set_title(f'{col.title()} Distribution by Target (df)', fontsize=14)
     axs[i].set_xlabel(hue, fontsize=12)
     axs[i].set_ylabel(col.title(), fontsize=12)
