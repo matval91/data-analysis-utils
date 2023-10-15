@@ -257,7 +257,8 @@ def correlation_matrix_heatmap(df: pd.core.frame.DataFrame)->None:
   Returns:
   """
   num_var, categorical_var, df_encoded = categorize_variables(df)
-  correlation_matrix_numerical(df, num_var)
+  # I will add the last column of the dataset assuming it's the label. for the categorical it's done in the function
+  input_var = np.append(num_var, df_encoded.columns[-1]);  correlation_matrix_numerical(df, input_var)
   correlation_matrix_categorical(df_encoded)
 
 def correlation_matrix_numerical(df: pd.core.frame.DataFrame, num_var: str, title_name: str='Correlation Matrix Numerical') -> None:
@@ -289,8 +290,11 @@ def correlation_matrix_categorical(df_encoded: pd.core.frame.DataFrame, title_na
   """
   excluded_columns = ['']
   columns_without_excluded = [col for col in df_encoded.columns if col not in excluded_columns]
+  # adding label column, assuming it's the last one
+  columns_without_excluded = np.append(columns_without_excluded, df_encoded.columns[-1]);
+
   corr = df_encoded[columns_without_excluded].corr()
-  
+
   fig, axes = plt.subplots(figsize=(14, 10))
   mask = np.zeros_like(corr)
   mask[np.triu_indices_from(mask)] = True
